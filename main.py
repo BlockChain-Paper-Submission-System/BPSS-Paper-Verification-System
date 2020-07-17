@@ -99,4 +99,4 @@ def flask_func(title, content, timestamp = time.time()):
 		if debug: print('[flask_func()] response@checkPlagiarism(): ', resp)
 		res = upload(title, pdfHash, TList, timestamp, resp[0], resp[1])
 		if debug: print('[flask_func()] Paper uploaded! Obj_Id@Mongo:', res)
-		return ['Sent!\nThe top3List: '+str(resp[1]),str(len(TList[0]))]
+		return ['Sent!\nThe top3List: '+str(resp[1]),str(len(TList[0])),resp[0]]

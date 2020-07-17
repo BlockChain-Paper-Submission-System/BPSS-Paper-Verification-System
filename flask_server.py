@@ -18,7 +18,7 @@ app = Flask(__name__)
 runTime = time.strftime("%Y-%m-%d_%H-%M-%S")
 if OPlog:
 	logcsv = open("./log/logfile_"+runTime+".csv", 'w', encoding="utf-8", errors='ignore')
-	logcsv.write('PdfFileName,FileSize,SentenceNums,OpenFileTS, StartCheckTS, EndCheckTS, CheckTime(ms), TotalTime(ms), \n')
+	logcsv.write('PdfFileName,FileSize,SentenceNums,Summary,OpenFileTS, StartCheckTS, EndCheckTS, CheckTime(ms), TotalTime(ms), \n')
 	logcsv.close()
 CORS(app)
 @app.route('/', methods=['GET', 'POST'])
@@ -44,7 +44,7 @@ def getData():
 				strSize = intSize+' B'
 			if OPlog:
 				logcsv = open("./log/logfile_"+runTime+".csv", 'a', encoding="utf-8", errors='ignore')
-				logcsv.write(data['title']+','+strSize+','+resp[1]+','+str(data['timestamp']*1000)+','+str(sTime*1000)+','+str(eTime*1000)+','+str((eTime-sTime)*1000)+','+str(float(eTime-data['timestamp'])*1000)+'\n')
+				logcsv.write(data['title']+','+strSize+','+resp[1]+','+resp[2]+','+str(data['timestamp']*1000)+','+str(sTime*1000)+','+str(eTime*1000)+','+str((eTime-sTime)*1000)+','+str(float(eTime-data['timestamp'])*1000)+'\n')
 				logcsv.close()
 			return Response(resp[0],status=200)
 		else:
@@ -61,7 +61,7 @@ def getData():
 			eTime = time.time()
 			if OPlog:
 				logcsv = open("./log/logfile_"+runTime+".csv", 'a', encoding="utf-8", errors='ignore')
-				logcsv.write(data['title']+','+strSize+','+resp[1]+','+str('-')+','+str(sTime*1000)+','+str(eTime*1000)+','+str((eTime-sTime)*1000)+','+str('-')+'\n')
+				logcsv.write(data['title']+','+strSize+','+resp[1]+','+resp[2]+','+str('-')+','+str(sTime*1000)+','+str(eTime*1000)+','+str((eTime-sTime)*1000)+','+str('-')+'\n')
 				logcsv.close()
 			return Response(resp[0],status=200)
 	else:
