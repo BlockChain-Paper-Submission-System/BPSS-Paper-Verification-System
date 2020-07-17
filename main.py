@@ -6,10 +6,11 @@ import hashGen
 import pymongo
 import hashlib
 import base64
+import heapq
 import time
+threshold = 0.5
 debug = False
-threshold = 0.3
-if debug:filePath = 'a.pdf'
+# if debug:filePath = 'a.pdf'
 Client = pymongo.MongoClient("mongodb://localhost:27017/")
 DB = Client["BPSS"]
 collection = DB['paper']
@@ -43,22 +44,33 @@ def checkExist(pdfHash):
 	if debug:print('[checkExist()] ', content_pointer)
 	if content_pointer == None: # not exist
 		if debug:print("[checkExist()] pdfHash doesn't exist!")
-		return True
+		return False
 	else:
 		if debug:print("[checkExist()] pdfHash already exist!")
-		return False
+		return True
 
 def checkPlagiarism(TList):
+	top3List = ['-','-','-'] #Freq:highest->lowest
+	tempPercentageList = [0.0, 0.0, 0.0]
+	sumNumerator = 0
+	sumDenominator = 0
 	for x in collection.find({}):
 		if debug:print("[checkPlagiarism()] ", x['_id'], x['title'], x['timestamp'])
-		plagiarismPercentage = len(set(TList[0])&set(x['allList'])) / len(TList[0])
+		s = len(set(TList[0])&set(x['allList']))
+		sumNumerator += s
+		sumDenominator += x['numOfSentence']
+		plagiarismPercentage = float(s) / float(len(TList[0]))
+		for i in range(3):
+			if plagiarismPercentage > tempPercentageList[i]:
+				tempPercentageList.append(plagiarismPercentage)
+				tempPercentageList = heapq.nlargest(3,tempPercentageList)
+				top3List[i] = x['title']
+				break
 		if debug:print("[checkPlagiarism()] ", plagiarismPercentage)
-		if plagiarismPercentage >= threshold:
-			return False
-		else:
-			return True
+	summary = float(sumNumerator/sumDenominator)
+	return [summary, top3List]
 
-def upload(title, pdfHash, TList, ts):
+def upload(title, pdfHash, TList, ts, summary, top3List):
 	collection = DB['paper']
 	uploadData = {
 	'title': title,
@@ -66,28 +78,25 @@ def upload(title, pdfHash, TList, ts):
 	'pdfHash': pdfHash,
 	'allList': TList[0],
 	'combHash:': TList[1],
-	'timestamp': ts
+	'timestamp': ts,
+	'summary': summary,
+	'top3List': top3List
 	}
 	return collection.insert(uploadData)
 
 def flask_func(title, content, timestamp = time.time()):
+	print('_Title: ', title)
 	receivePdf = open('./bin/temp.fdp', 'bw')
 	receivePdf.write(base64.b64decode(content))
 	receivePdf.close()
-	TList = getHash('./bin/temp.fdp')
 	pdfHash = fileHash('./bin/temp.fdp')
 	if checkExist(pdfHash):
-		if checkPlagiarism(TList):
-			res = upload(title, pdfHash, TList, timestamp)
-			if debug: print('[checkPlagiarism()] Obj_Id@Mongo:', res)
-			if debug: print('[checkPlagiarism()] status: Sent')
-			return Response(
-				str('Sent'),
-				status=200
-			)
+		if debug:print('[flask_func()] status: This paper has been submitted before.')
+		return ['This paper has been submitted before.','-','Exist']
 	else:
-		if debug:print('[checkPlagiarism()] status: This paper has been submitted before.')
-		return Response(
-			'This paper has been submitted before.',
-			status=200
-		)
+		TList = getHash('./bin/temp.fdp')
+		resp = checkPlagiarism(TList)
+		if debug: print('[flask_func()] response@checkPlagiarism(): ', resp)
+		res = upload(title, pdfHash, TList, timestamp, resp[0], resp[1])
+		if debug: print('[flask_func()] Paper uploaded! Obj_Id@Mongo:', res)
+		return ['Sent!\nThe top3List: '+str(resp[1]),str(len(TList[0]))]

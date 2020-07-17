@@ -4,7 +4,6 @@ import PyPDF2
 import hashlib
 import regularExpression as RE
 debug = False
-
 def Analyser(filePath):
     file = open(filePath, 'rb')
     pdfReader = PyPDF2.PdfFileReader(file)
