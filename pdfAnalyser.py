@@ -18,5 +18,5 @@ def Analyser(filePath):
         for i in range(len(normal_content)):
             allData.append(normal_content[i])
     file.close()
-    if debug:print([Analyser()], allData)
+    if debug:print('[Analyser()]', allData)
     return allData
