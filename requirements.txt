@@ -3,4 +3,3 @@ Flask-Cors==3.0.8
 pymongo==3.10.1
 PyPDF2==1.26.0
 requests==2.21.0
-pdfminer.six=20200720
