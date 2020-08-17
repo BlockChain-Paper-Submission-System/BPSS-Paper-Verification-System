@@ -43,7 +43,13 @@ def Analyser(filePath):
                     interpreter.process_page(page)
                 page_content = retstr.getvalue()
                 normal_content = RE.splitIntoSentences(page_content)
-    for i in range(len(normal_content)):
-        allData.append(normal_content[i])
+    # for i in range(len(normal_content)):
+    #     allData.append(normal_content[i])
+        if len(normal_content) < 100:
+                for i in range(len(normal_content)):
+                    allData.append(normal_content[i])
+        else:
+                for i in range(100):
+                    allData.append(normal_content[i])
     if debug:print('[Analyser()]', allData)
     return allData

@@ -10,6 +10,7 @@ import heapq
 import time
 threshold = 0.5
 debug = False
+OPlog = True
 # if debug:filePath = 'a.pdf'
 Client = pymongo.MongoClient("mongodb://localhost:27017/")
 DB = Client["BPSS"]
@@ -85,18 +86,80 @@ def upload(title, pdfHash, TList, ts, summary, top3List):
 	return collection.insert(uploadData)
 
 def flask_func(title, content, timestamp = time.time()):
+	# return paperStatus+top3List, NumOfSentence, summary
+	'''
+	*logData template*
+	{
+		'paperStatus':'-',
+		'NOS':-, #NumOfSentence
+		'summary':-,
+		'pdfWriteTime':-,
+		'pdfHashTime':-,
+		'checkExist()Time':-,
+		'getHash()Time':-,
+		'checkPlagiarism()Time':-,
+		'upload()Time':-
+	}
+	'''
 	print('_Title: ', title)
+	if OPlog: pdfWrite_sTS = time.time()
 	receivePdf = open('./bin/temp.fdp', 'bw')
 	receivePdf.write(base64.b64decode(content))
 	receivePdf.close()
+	if OPlog: pdfWrite_eTS = time.time()
+	if OPlog: pdfHash_sTS = time.time()
 	pdfHash = fileHash('./bin/temp.fdp')
-	if checkExist(pdfHash):
+	if OPlog: pdfHash_eTS = time.time()
+	if OPlog: checkExist_sTS = time.time()
+	checkExistFlag = checkExist(pdfHash)
+	if OPlog: checkExist_eTS = time.time()
+	if checkExistFlag:
 		if debug:print('[flask_func()] status: This paper has been submitted before.')
-		return ['This paper has been submitted before.','-','Exist']
+		if OPlog:
+			logData = {
+				'paperStatus':'This paper has been submitted before.',
+				'NOS':'None',
+				'summary':'Exist',
+				'pdfWriteTime':'None',
+				'pdfHashTime':'None',
+				'checkExist()Time':'None',
+				'getHash()Time':'None',
+				'checkPlagiarism()Time':'None',
+				'upload()Time':'None'
+			}
+			return logData
+		else:
+			logData = {
+				'paperStatus':'This paper has been submitted before.'
+			}
+			return logData
 	else:
+		if OPlog: getHash_sTS = time.time()
 		TList = getHash('./bin/temp.fdp')
+		if OPlog: getHash_eTS = time.time()
+		if OPlog: checkPlagiarism_sTS = time.time()
 		resp = checkPlagiarism(TList)
+		if OPlog: checkPlagiarism_eTS = time.time()
 		if debug: print('[flask_func()] response@checkPlagiarism(): ', resp)
-		res = upload(title, pdfHash, TList, timestamp, resp[0], resp[1])
+		if OPlog: upload_sTS = time.time()
+		res = upload(title, pdfHash, TList, timestamp, resp[0], resp[1]) #resp[0], resp[1] = summary, top3List
+		if OPlog: upload_eTS = time.time()
 		if debug: print('[flask_func()] Paper uploaded! Obj_Id@Mongo:', res)
-		return ['Sent!\nThe top3List: '+str(resp[1]),str(len(TList[0])),resp[0]]
+		if OPlog:
+			logData = {
+				'paperStatus':'Sent!\nThe top3List: '+str(resp[1]),
+				'NOS':str(len(TList[0])),
+				'summary':str(resp[0]),
+				'pdfWriteTime':str((pdfWrite_eTS-pdfWrite_sTS)*1000),
+				'pdfHashTime':str((pdfHash_eTS-pdfHash_sTS)*1000),
+				'checkExist()Time':str((checkExist_eTS-checkExist_sTS)*1000),
+				'getHash()Time':str((getHash_eTS-getHash_sTS)*1000),
+				'checkPlagiarism()Time':str((checkPlagiarism_eTS-checkPlagiarism_sTS)*1000),
+				'upload()Time':str((upload_eTS-upload_sTS)*1000)
+			}
+			return logData
+		else:
+			logData = {
+				'paperStatus':'Sent!\nThe top3List: '+str(resp[1])
+			}
+			return logData
