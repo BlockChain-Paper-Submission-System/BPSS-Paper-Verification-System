@@ -3,6 +3,7 @@
 import os
 import json
 import time
+import logging
 from flask import Flask
 from flask import request
 from flask import redirect
@@ -14,6 +15,8 @@ import main
 debug = False
 OPlog = True
 
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)
 app = Flask(__name__)
 runTime = time.strftime("%Y-%m-%d_%H-%M-%S")
 
