@@ -1,6 +1,6 @@
 Flask==1.0.2
 Flask-Cors==3.0.9
 pymongo==3.10.1
-PyPDF2==1.26.0
+PyPDF2==1.27.5
 pdfminer.six==20200720
 requests==2.21.0
